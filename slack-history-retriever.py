@@ -3,21 +3,24 @@
 ## Made by spiderboy
 ##
 ## Started on  Sun Feb  8 18:07:32 2015 spiderboy
-## Last update Sun Feb  8 23:20:58 2015 spiderboy
+## Last update Mon Feb  9 19:43:33 2015 spiderboy
 ##
 #!/usr/bin/python
 
 import requests
 import json
+import time
 import re
 import io
 
+# Full Unix Path to log folder
 log_path = "~/slack-history/"
 # Find your token @ https://api.slack.com/web
 token = ""
+# Your Slack URL
+url = "https://lescoupains.slack.com/api/"
 
 def get_method_result(method, args = ""):
-    url = "https://lescoupains.slack.com/api/"
     r = requests.get("%s%s?token=%s&%s" % (url, method, token, args))
     res = json.loads(r.text)
     return res
@@ -85,10 +88,11 @@ def get_channel_history(id_channel, channel_name):
     if 'messages' in res and res['messages']:
         set_latest(channel_name, res['messages'][0]['ts'])
         for message in reversed(res['messages']):
+            ts = time.strftime('%d/%m/%Y %H:%M:%S',  time.gmtime(int(message['ts'].split('.')[0])))
             if 'user' in message:
-                formatted.append("<%s> %s" % (message['user'], message['text']))
+                formatted.append("[%s] <%s> %s" % (ts, message['user'], message['text']))
             else:
-                formatted.append("%s" % (message['text']))
+                formatted.append("[%s] %s" % (ts, message['text']))
         return formatted
     else:
         return ""
