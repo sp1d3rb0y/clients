@@ -1,13 +1,14 @@
-## slack.py for Slack History Retriever in ~/slack-history
+## slack-history-retriever.py for Slack History Retriever in ~/slack-history
 ##
 ## Made by spiderboy
 ##
 ## Started on  Sun Feb  8 18:07:32 2015 spiderboy
-## Last update Mon Feb  9 19:43:33 2015 spiderboy
+## Last update Thu Feb 12 23:33:13 2015 spiderboy
 ##
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import requests
+import sys
 import json
 import time
 import re
@@ -71,19 +72,26 @@ def write_log(channel, lines):
         f.write(l + '\n')
     f.close()
 
-def get_channel_history(id_channel, channel_name):
+def get_channel_history(id_channel, channel_name, verbose):
     args = "count=1000&channel=%s" % id_channel
     latest = get_latest(channel_name)
     if latest is not None:
         args += "&oldest=%s" % latest
     res = get_method_result("channels.history", args)
-    hasmore = res['has_more']
-    while hasmore:
-        args = "count=1000&channel=%s" % id_channel
-        args += "&latest=%s" % res['messages'][0]['ts']
-        newres = get_method_result("channels.history", args)
-        res['messages'] = newres['messages'] + res['messages']
-        hasmore = newres['has_more']
+    if verbose:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+    if 'has_more' in res:
+        hasmore = res['has_more']
+        while hasmore:
+            args = "count=1000&channel=%s" % id_channel
+            args += "&latest=%s" % res['messages'][0]['ts']
+            newres = get_method_result("channels.history", args)
+            res['messages'] = newres['messages'] + res['messages']
+            hasmore = newres['has_more']
+            if verbose:
+                sys.stdout.write('.')
+                sys.stdout.flush()
     formatted = []
     if 'messages' in res and res['messages']:
         set_latest(channel_name, res['messages'][0]['ts'])
@@ -93,16 +101,28 @@ def get_channel_history(id_channel, channel_name):
                 formatted.append("[%s] <%s> %s" % (ts, message['user'], message['text']))
             else:
                 formatted.append("[%s] %s" % (ts, message['text']))
+        if verbose:
+            print
         return formatted
     else:
+        if verbose:
+            print
         return ""
 
-channels = get_channels()
-users = get_users()
+if __name__ == '__main__':
+    channels = get_channels()
+    users = get_users()
 
-for chan in channels:
-    lines = get_channel_history(chan, channels[chan])
-    logs = []
-    for l in lines:
-        logs.append(replace_chans_and_users(l, users, channels))
-    write_log(channels[chan], logs)
+    verbose = (len(sys.argv) == 2) and (sys.argv[1] == '-v')
+
+    for chan in channels:
+        if verbose:
+            print "[+] Retrieving history for channel %s" % (channels[chan]),
+            sys.stdout.flush()
+        lines = get_channel_history(chan, channels[chan], verbose)
+        logs = []
+        if verbose:
+            print "[+] Writing logs for %s (%i lines)" % (channels[chan], len(lines))
+        for l in lines:
+            logs.append(replace_chans_and_users(l, users, channels))
+        write_log(channels[chan], logs)

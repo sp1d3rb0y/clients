@@ -2,3 +2,4 @@
 * Check trailing slash in log_path
 * Handle path expansion properly (UTF-8 related)
 * Write logs in real-time
+* Handle errors returned from Slack servers (Bad Token/500/whatever)
