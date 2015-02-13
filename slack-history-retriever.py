@@ -3,7 +3,7 @@
 ## Made by spiderboy
 ##
 ## Started on  Sun Feb  8 18:07:32 2015 spiderboy
-## Last update Thu Feb 12 23:33:13 2015 spiderboy
+## Last update Fri Feb 13 11:00:12 2015 spiderboy
 ##
 #!/usr/bin/env python
 
@@ -85,9 +85,9 @@ def get_channel_history(id_channel, channel_name, verbose):
         hasmore = res['has_more']
         while hasmore:
             args = "count=1000&channel=%s" % id_channel
-            args += "&latest=%s" % res['messages'][0]['ts']
+            args += "&latest=%s" % res['messages'][len(res['messages']) - 1]['ts']
             newres = get_method_result("channels.history", args)
-            res['messages'] = newres['messages'] + res['messages']
+            res['messages'] = res['messages'] + newres['messages']
             hasmore = newres['has_more']
             if verbose:
                 sys.stdout.write('.')
